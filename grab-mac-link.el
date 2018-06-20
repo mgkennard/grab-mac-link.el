@@ -117,6 +117,7 @@ This will use the command `open' with the message URL."
 
 (defun grab-mac-link-chrome-1 ()
   (let ((result
+	 (grab-mac-strip-quotes 
          (do-applescript
           (concat
            "set frontmostApplication to path to frontmost application\n"
@@ -128,7 +129,7 @@ This will use the command `open' with the message URL."
            "activate application (frontmostApplication as text)\n"
            "set links to {}\n"
            "copy theResult to the end of links\n"
-           "return links as string\n"))))
+           "return links as string\n")))))
     (grab-mac-link-split
      (replace-regexp-in-string
       "^\"\\|\"$" "" (car (split-string result "[\r\n]+" t))))))
@@ -138,7 +139,7 @@ This will use the command `open' with the message URL."
 
 (defun grab-mac-link-firefox-1 ()
   (let ((result
-         (do-applescript
+         (grab-mac-strip-quotes (do-applescript
           (concat
            "set oldClipboard to the clipboard\n"
            "set frontmostApplication to path to frontmost application\n"
@@ -158,7 +159,7 @@ This will use the command `open' with the message URL."
            "activate application (frontmostApplication as text)\n"
            "set links to {}\n"
            "copy theResult to the end of links\n"
-           "return links as string\n"))))
+           "return links as string\n")))))
     (grab-mac-link-split
      (car (split-string result "[\r\n]+" t)))))
 
@@ -167,19 +168,21 @@ This will use the command `open' with the message URL."
 
 (defun grab-mac-link-safari-1 ()
   (grab-mac-link-split
+   (grab-mac-strip-quotes 
    (do-applescript
     (concat
      "tell application \"Safari\"\n"
      "	set theUrl to URL of document 1\n"
      "	set theName to the name of the document 1\n"
      "	return theUrl & \"::split::\" & theName\n"
-     "end tell\n"))))
+     "end tell\n")))))
 
 
 ;; Finder.app
 
 (defun grab-mac-link-finder-selected-items ()
   (split-string
+   (grab-mac-strip-quotes
    (do-applescript
     (concat
      "tell application \"Finder\"\n"
@@ -190,7 +193,7 @@ This will use the command `open' with the message URL."
      " copy theLink to the end of links\n"
      " end repeat\n"
      " return links as string\n"
-     "end tell\n"))
+     "end tell\n")))
    "\n" t))
 
 (defun grab-mac-link-finder-1 ()
@@ -205,6 +208,7 @@ If there is none, return nil."
 (defun grab-mac-link-mail-1 ()
   "AppleScript to create links to selected messages in Mail.app."
   (grab-mac-link-split
+   (grab-mac-strip-quotes
    (do-applescript
     (concat
      "tell application \"Mail\"\n"
@@ -220,13 +224,14 @@ If there is none, return nil."
      "copy theLink to end of theLinkList\n"
      "end repeat\n"
      "return theLinkList as string\n"
-     "end tell"))))
+     "end tell")))))
 
 
 ;; Terminal.app
 
 (defun grab-mac-link-terminal-1 ()
   (grab-mac-link-split
+   (grab-mac-strip-quotes
    (do-applescript
     (concat
      "tell application \"Terminal\"\n"
@@ -234,12 +239,13 @@ If there is none, return nil."
      "  do script \"pwd | pbcopy\" in window 1\n"
      "  set theUrl to do shell script \"pbpaste\"\n"
      "  return theUrl & \"::split::\" & theName\n"
-     "end tell"))))
+     "end tell")))))
 
 
 ;; Skim.app
 (defun grab-mac-link-skim-1 ()
   (grab-mac-link-split
+   (grab-mac-strip-quotes
    (do-applescript
     (concat
      "tell application \"Skim\"\n"
@@ -255,7 +261,7 @@ If there is none, return nil."
      "set theLink to \"skim://\" & thePath & \"::\" & thePage & "
      "\"::split::\" & theContent\n"
      "end tell\n"
-     "return theLink as string\n"))))
+     "return theLink as string\n")))))
 
 
 (defun grab-mac-strip-quotes (text)
@@ -323,7 +329,7 @@ or nil, plain link will be used."
     (error "Unknown app %s or link-type %s" app link-type))
   (let* ((grab-link-func (intern (format "grab-mac-link-%s-1" app)))
          (make-link-func (intern (format "grab-mac-link-make-%s-link" link-type)))
-         (link (apply make-link-func (grab-mac-strip-quotes (funcall grab-link-func)))))
+         (link (apply make-link-func (funcall grab-link-func))))
     (when (called-interactively-p 'any)
       (if current-prefix-arg
           (if (eq link-type 'org)
