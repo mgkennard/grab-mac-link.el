@@ -258,6 +258,14 @@ If there is none, return nil."
      "return theLink as string\n"))))
 
 
+(defun grab-mac-strip-quotes (text)
+  "Some builds of Emacs for macOS return a string with leading and trailing
+double quotes around string result returned by do-applescript. This removes
+these if present"
+  (if (and (string-prefix-p "\"" text) (string-suffix-p "\"" text))
+      (substring text 1 -1)
+    text))
+
 ;; One Entry point for all
 
 ;;;###autoload
@@ -315,7 +323,7 @@ or nil, plain link will be used."
     (error "Unknown app %s or link-type %s" app link-type))
   (let* ((grab-link-func (intern (format "grab-mac-link-%s-1" app)))
          (make-link-func (intern (format "grab-mac-link-make-%s-link" link-type)))
-         (link (apply make-link-func (funcall grab-link-func))))
+         (link (apply make-link-func (grab-mac-strip-quotes (funcall grab-link-func)))))
     (when (called-interactively-p 'any)
       (if current-prefix-arg
           (if (eq link-type 'org)
